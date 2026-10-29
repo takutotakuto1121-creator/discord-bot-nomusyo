@@ -1,0 +1,40 @@
+name: daily-news
+
+on:
+  schedule:
+    - cron: "0 22 * * *" # 22:00 UTC = 07:00 JST
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Print instead of posting to Discord"
+        type: boolean
+        default: false
+
+concurrency:
+  group: daily-news
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install
+        run: pip install .
+      - name: Run
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          DRY_RUN: ${{ inputs.dry_run && 'true' || 'false' }}
+        run: python -m nomusyo.main

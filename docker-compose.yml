@@ -1,0 +1,30 @@
+services:
+  bot:
+    build: .
+    image: nomusyo:latest
+    restart: unless-stopped
+    # Time to close the gateway and release the instance lock on SIGTERM.
+    stop_grace_period: 30s
+    env_file: .env
+    environment:
+      TZ: Asia/Tokyo
+    volumes:
+      # Persistent data (reserved for the SQLite DB); the rest of the filesystem is read-only.
+      - bot-data:/data
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
+    pids_limit: 128
+    mem_limit: 512m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+volumes:
+  bot-data:
